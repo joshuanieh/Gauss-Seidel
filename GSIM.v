@@ -17,6 +17,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     reg  [4-1:0]  cycle_count_w;
     reg  [6-1:0]  run_count_r;
     reg  [6-1:0]  run_count_w;
+    wire          start;
 
     register_file register_file (
         .clk_in(clk),
@@ -30,7 +31,8 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
         .x3_out(x3),
         .x4_out(x4),
         .x5_out(x5),
-        .x6_out(x6)
+        .x6_out(x6),
+        .start_out(start)
     );
 
     Computation_Unit Computation_Unit (
@@ -71,7 +73,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     end
 
     assign x_out = x;
-    assign out_valid = (run_count_r == RUN) ? 1'b1 : 1'b0;
+    assign out_valid = (start && run_count_r == RUN) ? 1'b1 : 1'b0;
 
 endmodule
 

@@ -10,7 +10,8 @@ module register_file (
     x3_out,
     x4_out,
     x5_out,
-    x6_out
+    x6_out,
+    start_out
 );
 
     input           clk_in, rst_in, en_in;
@@ -18,6 +19,7 @@ module register_file (
     input  [32-1:0] x_in;
     output [16-1:0] b_out;
     output [32-1:0] x1_out, x2_out, x3_out, x4_out, x5_out, x6_out;
+    output          start_out;
 
     reg    [16-1:0] b_r[0:16-1];
     reg    [16-1:0] b_w[0:16-1];
@@ -119,14 +121,6 @@ module register_file (
             count_r <= 4'd0;
     end
 
-    assign b_out  = b_r[0];
-    assign x1_out = (count_r == 4'd15) ? 32'd0 : x_r[1];
-    assign x2_out = (count_r == 4'd0)  ? 32'd0 : x_r[15];
-    assign x3_out = (count_r >= 4'd14) ? 32'd0 : x_r[2];
-    assign x4_out = (count_r <= 4'd1)  ? 32'd0 : x_r[14];
-    assign x5_out = (count_r >= 4'd13) ? 32'd0 : x_r[3];
-    assign x6_out = (count_r <= 4'd2)  ? 32'd0 : x_r[13];
-
     always @(*) begin
         if (count_r == 4'd15)
             start_w = 1'd1;
@@ -141,4 +135,12 @@ module register_file (
             start_r <= start_w;
     end
 
+    assign b_out     = b_r[0];
+    assign x1_out    = (count_r == 4'd15) ? 32'd0 : x_r[1];
+    assign x2_out    = (count_r == 4'd0)  ? 32'd0 : x_r[15];
+    assign x3_out    = (count_r >= 4'd14) ? 32'd0 : x_r[2];
+    assign x4_out    = (count_r <= 4'd1)  ? 32'd0 : x_r[14];
+    assign x5_out    = (count_r >= 4'd13) ? 32'd0 : x_r[3];
+    assign x6_out    = (count_r <= 4'd2)  ? 32'd0 : x_r[13];
+    assign start_out = start_r;
 endmodule
