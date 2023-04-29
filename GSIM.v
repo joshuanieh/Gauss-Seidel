@@ -1,11 +1,82 @@
 `timescale 1ns/10ps
 module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
-input   clk ;
-input   reset ;
-input   in_en;
-output  out_valid;
-input   [15:0]  b_in;
-output  [31:0]  x_out;
+
+    input   clk ;
+    input   reset ;
+    input   in_en;
+    output  out_valid;
+    input   [15:0]  b_in;
+    output  [31:0]  x_out;
+
+    parameter RUN =50;
+
+    input           clk, reset, in_en;
+    input  [16-1:0] b_in;
+    output [32-1:0] x_out;
+    output          out_valid;
+
+    wire [32-1:0] x;
+    wire [32-1:0] x1, x2, x3, x4, x5, x6;
+    wire [16-1:0] b;
+    reg  [4-1:0]  cycle_count_r;
+    reg  [4-1:0]  cycle_count_w;
+    reg  [6-1:0]  run_count_r;
+    reg  [6-1:0]  run_count_w;
+
+    register_file register_file (
+        .clk_in(clk),
+        .rst_in(reset),
+        .en_in(in_en),
+        .b_in(b_in),
+        .x_in(x),
+        .b_out(b),
+        .x1_out(x1),
+        .x2_out(x2),
+        .x3_out(x3),
+        .x4_out(x4),
+        .x5_out(x5),
+        .x6_out(x6)
+    );
+
+    Computation_Unit Computation_Unit (
+        .clk(clk),
+        .reset(reset),
+        .b(b),
+        .x_0(x1),
+        .x_1(x2),
+        .x_2(x3),
+        .x_3(x4),
+        .x_4(x5),
+        .x_5(x6),
+        .x_new(x)
+    );
+
+    always @(*) begin
+        if (in_en == 1'b1)
+            cycle_count_w = 4'd0;
+        else
+            cycle_count_w = cycle_count_r + 1;
+    end
+
+    always @(posedge clk) begin
+        cycle_count_r <= cycle_count_w;
+    end
+
+    always @(*) begin
+        if (in_en == 1'b1)
+            run_count_w = 6'd0;
+        else if (cycle_count_r == 4'd15)
+            run_count_w = run_count_r + 1;
+        else
+            run_count_w = run_count_r;
+    end
+
+    always @(posedge clk) begin
+        run_count_r <= run_count_w;
+    end
+
+    assign x_out = x;
+    assign out_valid = (run_count_r > RUN && run_count_r <= RUN + 16) ? 1'b1 : 1'b0;
 
 endmodule
 
