@@ -153,8 +153,7 @@ module register_file (
                 x_w[i] = x_r[i+1];
             end
         end
-        else 
-        if (delay_start_r == 1'b1) begin //shift and store x_in to x[14]
+        else if (delay_start_r == 1'b1) begin //shift and store x_in to x[14]
             x_w[15] = x_r[0];
             x_w[14] = x_in;
             for (i = 0; i < 16 - 2; i = i + 1) begin
@@ -218,7 +217,7 @@ module register_file (
 
     //Handle delay_start_r, delayed from start_r by one cycle because of the computational unit delay
     always @(*) begin
-        delay_start_w = delay_start_r;
+        delay_start_w = start_r;
     end
 
     always @(posedge clk_in or posedge rst_in) begin
