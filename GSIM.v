@@ -144,42 +144,44 @@ module register_file (
 
     //Handle x_r, when reset is high, reset to initial values; else store their values until start_r is high, note that the delay_start_r is due to the pipeline of computational unit.
     always @(*) begin
-        for (i = 0; i < 16; i = i + 1) begin
-            x_w[i] = x_r[i];
-        end
-        if (start_r == 1'b1) begin //shift but not store x_in
-            x_w[15] = x_r[0];
-            for (i = 0; i < 16 - 1; i = i + 1) begin
-                x_w[i] = x_r[i+1];
-            end
-        end
-        else if (delay_start_r == 1'b1) begin //shift and store x_in to x[14]
+        if (delay_start_r == 1'b1) begin //shift and store x_in to x[14]
             x_w[15] = x_r[0];
             x_w[14] = x_in;
             for (i = 0; i < 16 - 2; i = i + 1) begin
                 x_w[i] = x_r[i+1];
             end
         end
+        else if (start_r == 1'b1) begin //shift but not store x_in
+            x_w[15] = x_r[0];
+            for (i = 0; i < 16 - 1; i = i + 1) begin
+                x_w[i] = x_r[i+1];
+            end
+        end
+        else begin
+            for (i = 0; i < 16; i = i + 1) begin
+                x_w[i] = x_r[i];
+            end
+        end
     end
 
     always @(posedge clk_in or posedge rst_in) begin
         if (rst_in == 1'b1) begin //Run initial_x_value_generator.py for random initial values
-            x_r[0] = 32'd0;
-            x_r[1] = 32'd0;
-            x_r[2] = 32'd0;
-            x_r[3] = 32'd0;
-            x_r[4] = 32'd0;
-            x_r[5] = 32'd0;
-            x_r[6] = 32'd0;
-            x_r[7] = 32'd0;
-            x_r[8] = 32'd0;
-            x_r[9] = 32'd0;
-            x_r[10] = 32'd0;
-            x_r[11] = 32'd0;
-            x_r[12] = 32'd0;
-            x_r[13] = 32'd0;
-            x_r[14] = 32'd0;
-            x_r[15] = 32'd0;
+            x_r[0] <= 32'd0;
+            x_r[1] <= 32'd0;
+            x_r[2] <= 32'd0;
+            x_r[3] <= 32'd0;
+            x_r[4] <= 32'd0;
+            x_r[5] <= 32'd0;
+            x_r[6] <= 32'd0;
+            x_r[7] <= 32'd0;
+            x_r[8] <= 32'd0;
+            x_r[9] <= 32'd0;
+            x_r[10] <= 32'd0;
+            x_r[11] <= 32'd0;
+            x_r[12] <= 32'd0;
+            x_r[13] <= 32'd0;
+            x_r[14] <= 32'd0;
+            x_r[15] <= 32'd0;
         end
         else begin
             for (i = 0; i < 16; i = i + 1) begin
