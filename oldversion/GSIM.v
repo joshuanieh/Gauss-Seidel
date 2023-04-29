@@ -73,6 +73,6 @@ module GSIM (
     end
 
     assign x_out = x;
-    assign out_valid = (run_count_r > RUN && run_count_r <= RUN + 16) ? 1'b1 : 1'b0;
+    assign out_valid = (run_count_r == RUN) ? 1'b1 : 1'b0;
     
 endmodule
