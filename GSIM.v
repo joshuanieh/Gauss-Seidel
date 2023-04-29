@@ -8,15 +8,15 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     input   [15:0]  b_in;
     output  [31:0]  x_out;
 
-    parameter RUN = 50; //after this run number, the out_valid will be pulled up
+    parameter RUN = 100; //after this run number, the out_valid will be pulled up
 
     wire [32-1:0] x;
     wire [32-1:0] x1, x2, x3, x4, x5, x6;
     wire [16-1:0] b;
     reg  [4-1:0]  cycle_count_r;
     reg  [4-1:0]  cycle_count_w;
-    reg  [6-1:0]  run_count_r;
-    reg  [6-1:0]  run_count_w;
+    reg  [8-1:0]  run_count_r;
+    reg  [8-1:0]  run_count_w;
     wire          start;
 
     register_file register_file (
@@ -254,20 +254,23 @@ module Computation_Unit (clk, reset, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); //
     output signed [31:0] x_new;
 
     //================= Parameter Declaration ======================
-    wire signed   [31:0] x_0_1, x_2_3, x_4_5, x_plus_b, x_sub_6, DFF_nxt;
-    wire signed   [31:0] x_0_1_mul4, x_0_1_mul8, x_0_1_mul13, x_2_3_mul2, x_2_3_mul4, x_2_3_mul6;
-    reg signed    [31:0] DFF;
+    wire signed   [32:0] x_0_1, x_2_3, x_4_5, x_plus_b;
+    wire signed   [33:0] x_2_3_mul2;
+    wire signed   [34:0] x_0_1_mul4, x_2_3_mul4, x_2_3_mul6;
+    wire signed   [35:0] x_0_1_mul8, x_0_1_mul13, x_sub_6;
+    wire signed   [36:0] DFF_nxt;
+    reg signed    [36:0] DFF;
 
     //===================== Combinational ==========================
     assign x_0_1 = x_0 + x_1;
     assign x_2_3 = x_2 + x_3;
     assign x_4_5 = x_4 + x_5;
     assign x_plus_b = x_4_5 + b;
-    assign x_0_1_mul4 = {x_0_1[29:0], 2'b0};
-    assign x_0_1_mul8 = {x_0_1[28:0], 3'b0};
+    assign x_0_1_mul4 = {x_0_1, 2'b0};
+    assign x_0_1_mul8 = {x_0_1, 3'b0};
     assign x_0_1_mul13 = x_0_1 + x_0_1_mul4 + x_0_1_mul8;
-    assign x_2_3_mul2 = {x_2_3[30:0], 1'b0};
-    assign x_2_3_mul4 = {x_2_3[29:0], 2'b0};
+    assign x_2_3_mul2 = {x_2_3, 1'b0};
+    assign x_2_3_mul4 = {x_2_3, 2'b0};
     assign x_2_3_mul6 = x_2_3_mul2 + x_2_3_mul4;
     assign x_sub_6 = x_plus_b - x_2_3_mul6;
     assign DFF_nxt = x_0_1_mul13 + x_sub_6;
@@ -276,37 +279,42 @@ module Computation_Unit (clk, reset, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); //
 
     //======================= Sequential ===========================
     always @(posedge clk or posedge reset) begin
-        if (reset) DFF <= 32'b0;
+        if (reset) DFF <= 36'b0;
         else DFF <= DFF_nxt;
     end
 
 endmodule
 
 module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-13 + 2^-14 
-    input  [31:0] in;          //            + 2^-17 + 2^-18 + 2^-21 + 2^-22 + 2^-25 + 2^-26)
+    input  [36:0] in;          //            + 2^-17 + 2^-18 + 2^-21 + 2^-22 + 2^-25 + 2^-26 + 2^-29 + 2^-30)
     output [31:0] out;
-    wire [33:0] x_5, x_6, x_9, x_10, x_13, x_14, x_17, x_18, x_21, x_22, x_25, x_26;
-    wire [33:0] x_5_6, x_9_10, x_13_14, x_17_18, x_21_22, x_25_26, x_5to10, x_13to18, x_21to26;
-    assign x_5 = {{5{in[31]}}, in[31:3]};
-    assign x_6 = {{6{in[31]}}, in[31:4]};
-    assign x_9 = {{9{in[31]}}, in[31:7]};
-    assign x_10 = {{10{in[31]}}, in[31:8]};
-    assign x_13 = {{13{in[31]}}, in[31:11]};
-    assign x_14 = {{14{in[31]}}, in[31:12]};
-    assign x_17 = {{17{in[31]}}, in[31:15]};
-    assign x_18 = {{18{in[31]}}, in[31:16]}; 
-    assign x_21 = {{21{in[31]}}, in[31:19]};
-    assign x_22 = {{22{in[31]}}, in[31:20]};
-    assign x_25 = {{25{in[31]}}, in[31:23]};
-    assign x_26 = {{26{in[31]}}, in[31:24]}; 
+    wire [33:0] x_5, x_6, x_9, x_10, x_13, x_14, x_17, x_18, x_21, x_22, x_25, x_26, x_29, x_30;
+    wire [33:0] x_5_6, x_9_10, x_13_14, x_17_18, x_21_22, x_25_26, x_29_30, x_5to10, x_13to18, x_21to26, x_5to18, x_21to30;
+    assign x_5 = in[36:3];
+    assign x_6 = {{1{in[36]}}, in[36:4]};
+    assign x_9 = {{4{in[36]}}, in[36:7]};
+    assign x_10 = {{5{in[36]}}, in[36:8]};
+    assign x_13 = {{8{in[36]}}, in[36:11]};
+    assign x_14 = {{9{in[36]}}, in[36:12]};
+    assign x_17 = {{12{in[36]}}, in[36:15]};
+    assign x_18 = {{13{in[36]}}, in[36:16]}; 
+    assign x_21 = {{16{in[36]}}, in[36:19]};
+    assign x_22 = {{17{in[36]}}, in[36:20]};
+    assign x_25 = {{20{in[36]}}, in[36:23]};
+    assign x_26 = {{21{in[36]}}, in[36:24]};
+    assign x_29 = {{24{in[36]}}, in[36:27]};
+    assign x_30 = {{25{in[36]}}, in[36:28]};
     assign x_5_6 = x_5 + x_6;
     assign x_9_10 = x_9 + x_10;
     assign x_13_14 = x_13 + x_14;
     assign x_17_18 = x_17 + x_18;
     assign x_21_22 = x_21 + x_22;
     assign x_25_26 = x_25 + x_26;
+    assign x_29_30 = x_29 + x_30;
     assign x_5to10 = x_5_6 + x_9_10;
     assign x_13to18 = x_13_14 + x_17_18;
     assign x_21to26 = x_21_22 + x_25_26;
-    assign out = x_5to10[33:2] + x_13to18[33:2] + x_21to26[33:2];
+    assign x_5to18 = x_5to10 + x_13to18;
+    assign x_21to30 = x_21to26 + x_29_30;
+    assign out = x_5to18[33:2] + x_21to30[33:2];
 endmodule
