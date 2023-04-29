@@ -75,7 +75,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     end
 
     assign x_out     = x; //just output the x computed
-    assign out_valid = (start && run_count_r == RUN) ? 1'b1 : 1'b0; //pulled up when run_count_r achieve RUN
+    assign out_valid = (start && ((run_count_r == RUN && cycle_count_r >= 4'd1) || (run_count_r == RUN + 1 && cycle_count_r == 4'd0))) ? 1'b1 : 1'b0; //pulled up when run_count_r achieve RUN
 
 endmodule
 
