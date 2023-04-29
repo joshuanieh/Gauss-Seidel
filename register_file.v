@@ -31,6 +31,9 @@ module register_file (
     reg            start_r;
     reg            start_w;
 
+    reg            delay_start_r;
+    reg            delay_start_w;
+
     integer i;
 
     always @(*) begin
@@ -59,8 +62,16 @@ module register_file (
             x_w[i] = x_r[i];
         end
         if (start_r == 1'b1) begin
-            x_w[15] = x_in;
+            x_w[15] = x_r[0];
             for (i = 0; i < 16 - 1; i = i + 1) begin
+                x_w[i] = x_r[i+1];
+            end
+        end
+        else 
+        if (delay_start_r == 1'b1) begin
+            x_w[15] = x_r[0];
+            x_w[14] = x_in;
+            for (i = 0; i < 16 - 2; i = i + 1) begin
                 x_w[i] = x_r[i+1];
             end
         end
@@ -103,17 +114,9 @@ module register_file (
             count_r <= 4'd0;
     end
 
-    assign b_out  = b_r[0];
-    assign x1_out = (count_r == 4'd15) ? 32'd0 : x_r[1];
-    assign x2_out = (count_r == 4'd0)  ? 32'd0 : x_r[15];
-    assign x3_out = (count_r >= 4'd14) ? 32'd0 : x_r[2];
-    assign x4_out = (count_r <= 4'd1)  ? 32'd0 : x_r[14];
-    assign x5_out = (count_r >= 4'd13) ? 32'd0 : x_r[3];
-    assign x6_out = (count_r <= 4'd2)  ? 32'd0 : x_r[13];
-
     always @(*) begin
         if (count_r == 4'd15)
-            start_w = 1'd1;
+            start_w = 1'b1;
         else
             start_w = start_r;
     end
@@ -124,5 +127,27 @@ module register_file (
         else
             start_r <= start_w;
     end
+
+    always @(*) begin
+        if (start_r == 1'b1)
+            delay_start_w = 1'b1;
+        else
+            delay_start_w = delay_start_r;
+    end
+
+    always @(posedge clk_in or posedge rst_in) begin
+        if (rst_in == 1'b1)
+            delay_start_r <= 1'b0;
+        else
+            delay_start_r <= delay_start_w;
+    end
+
+    assign b_out  = b_r[0];
+    assign x1_out = (count_r == 4'd15) ? 32'd0 : x_r[1];
+    assign x2_out = (count_r == 4'd0)  ? 32'd0 : x_r[15];
+    assign x3_out = (count_r >= 4'd14) ? 32'd0 : x_r[2];
+    assign x4_out = (count_r <= 4'd1)  ? 32'd0 : x_r[14];
+    assign x5_out = (count_r >= 4'd13) ? 32'd0 : x_r[3];
+    assign x6_out = (count_r <= 4'd2)  ? 32'd0 : x_r[13];
 
 endmodule

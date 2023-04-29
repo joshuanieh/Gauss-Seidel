@@ -10,11 +10,6 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
 
     parameter RUN =50;
 
-    input           clk, reset, in_en;
-    input  [16-1:0] b_in;
-    output [32-1:0] x_out;
-    output          out_valid;
-
     wire [32-1:0] x;
     wire [32-1:0] x1, x2, x3, x4, x5, x6;
     wire [16-1:0] b;
@@ -41,7 +36,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     Computation_Unit Computation_Unit (
         .clk(clk),
         .reset(reset),
-        .b(b),
+        .b({b, 16'd0}),
         .x_0(x1),
         .x_1(x2),
         .x_2(x3),
@@ -76,7 +71,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     end
 
     assign x_out = x;
-    assign out_valid = (run_count_r > RUN && run_count_r <= RUN + 16) ? 1'b1 : 1'b0;
+    assign out_valid = (run_count_r == RUN) ? 1'b1 : 1'b0;
 
 endmodule
 
