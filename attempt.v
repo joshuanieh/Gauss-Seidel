@@ -98,42 +98,42 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
 
     always @(*) begin
         case (cycle_count_r)//1 5 9 13 2 6 10 14 3 7 11 15 4 8 12 16
-            4'd0:
-                x_out =  x_stored_r[1];
             4'd1:
-                x_out =  x_stored_r[5];
+                x_out =  x_stored_r[1];
             4'd2:
-                x_out =  x_stored_r[9];
+                x_out =  x_stored_r[5];
             4'd3:
-                x_out =  x_stored_r[13];
+                x_out =  x_stored_r[9];
             4'd4:
-                x_out =  x_stored_r[2];
+                x_out =  x_stored_r[13];
             4'd5:
-                x_out =  x_stored_r[6];
+                x_out =  x_stored_r[2];
             4'd6:
-                x_out =  x_stored_r[10];
+                x_out =  x_stored_r[6];
             4'd7:
-                x_out =  x_stored_r[14];
+                x_out =  x_stored_r[10];
             4'd8:
-                x_out =  x_stored_r[3];
+                x_out =  x_stored_r[14];
             4'd9:
-                x_out =  x_stored_r[7];
+                x_out =  x_stored_r[3];
             4'd10:
-                x_out =  x_stored_r[11];
+                x_out =  x_stored_r[7];
             4'd11:
-                x_out =  x_stored_r[15];
+                x_out =  x_stored_r[11];
             4'd12:
-                x_out =  x_stored_r[4];
+                x_out =  x_stored_r[15];
             4'd13:
-                x_out =  x_stored_r[8];
+                x_out =  x_stored_r[4];
             4'd14:
-                x_out =  x_stored_r[12];
+                x_out =  x_stored_r[8];
             4'd15:
+                x_out =  x_stored_r[12];
+            4'd0:
                 x_out =  x_stored_r[16];
         endcase
     end
 
-    assign out_valid = (start && (run_count_r == RUN + 2)) ? 1'b1 : 1'b0; //pulled up when run_count_r achieve RUN
+    assign out_valid = (start && ((run_count_r == RUN+1 && cycle_count_r >= 4'd1) || (run_count_r == RUN + 2 && cycle_count_r == 4'd0))) ? 1'b1 : 1'b0; //pulled up when run_count_r achieve RUN
 
 endmodule
 
