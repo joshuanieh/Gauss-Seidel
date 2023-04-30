@@ -8,7 +8,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     input   [15:0]  b_in;
     output reg [31:0]  x_out;
 
-    parameter RUN = 69; //after this run number, the out_valid will be pulled up
+    parameter RUN = 100; //after this run number, the out_valid will be pulled up
 
     wire [32-1:0] x;
     wire [32-1:0] x1, x2, x3, x4, x5, x6;
@@ -82,7 +82,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
         for (i = 1; i < 16+1; i = i + 1) begin
             x_stored_w[i] = x_stored_r[i];
         end
-        if (start && ((run_count_r == RUN && cycle_count_r >= 4'd1) || (run_count_r == RUN + 1 && cycle_count_r == 4'd0))) begin
+        if (start && ((run_count_r == RUN && cycle_count_r >= 4'd3) || (run_count_r == RUN + 1 && cycle_count_r <= 4'd2))) begin
             x_stored_w[16] = x;
             for (i = 1; i < 16; i = i + 1) begin
                 x_stored_w[i] = x_stored_r[i+1];
@@ -98,42 +98,42 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
 
     always @(*) begin
         case (cycle_count_r)//1 5 9 13 2 6 10 14 3 7 11 15 4 8 12 16
-            4'd1:
-                x_out =  x_stored_r[1];
-            4'd2:
-                x_out =  x_stored_r[5];
             4'd3:
-                x_out =  x_stored_r[9];
+                x_out =  x_stored_r[1];
             4'd4:
-                x_out =  x_stored_r[13];
+                x_out =  x_stored_r[5];
             4'd5:
-                x_out =  x_stored_r[2];
+                x_out =  x_stored_r[9];
             4'd6:
-                x_out =  x_stored_r[6];
+                x_out =  x_stored_r[13];
             4'd7:
-                x_out =  x_stored_r[10];
+                x_out =  x_stored_r[2];
             4'd8:
-                x_out =  x_stored_r[14];
+                x_out =  x_stored_r[6];
             4'd9:
-                x_out =  x_stored_r[3];
+                x_out =  x_stored_r[10];
             4'd10:
-                x_out =  x_stored_r[7];
+                x_out =  x_stored_r[14];
             4'd11:
-                x_out =  x_stored_r[11];
+                x_out =  x_stored_r[3];
             4'd12:
-                x_out =  x_stored_r[15];
+                x_out =  x_stored_r[7];
             4'd13:
-                x_out =  x_stored_r[4];
+                x_out =  x_stored_r[11];
             4'd14:
-                x_out =  x_stored_r[8];
+                x_out =  x_stored_r[15];
             4'd15:
-                x_out =  x_stored_r[12];
+                x_out =  x_stored_r[4];
             4'd0:
+                x_out =  x_stored_r[8];
+            4'd1:
+                x_out =  x_stored_r[12];
+            4'd2:
                 x_out =  x_stored_r[16];
         endcase
     end
 
-    assign out_valid = (start && ((run_count_r == RUN+1 && cycle_count_r >= 4'd1) || (run_count_r == RUN + 2 && cycle_count_r == 4'd0))) ? 1'b1 : 1'b0; //pulled up when run_count_r achieve RUN
+    assign out_valid = (start && ((run_count_r == RUN+1 && cycle_count_r >= 4'd3) || (run_count_r == RUN + 2 && cycle_count_r <= 4'd2))) ? 1'b1 : 1'b0; //pulled up when run_count_r achieve RUN
 
 endmodule
 
@@ -175,6 +175,9 @@ module register_file (
 
     reg                 delay_start_r;
     reg                 delay_start_w;
+
+    reg                 compute_delay_start_r;
+    reg                 compute_delay_start_w;
 
     integer             i;
 
@@ -220,12 +223,12 @@ module register_file (
 
     //Handle x_r, when reset is high, reset to initial values; else store their values until start_r is high, note that the delay_start_r is due to the pipeline of computational unit.
     always @(*) begin
-        if (delay_start_r == 1'b1) begin //shift and store x_in to x[14]
+        if (compute_delay_start_r == 1'b1) begin //shift and store x_in to x[14]
             x_w[16] = x_r[1];
-            x_w[15] = x_in;
-            for (i = 1; i < 16 - 1; i = i + 1) begin
+            for (i = 1; i < 16; i = i + 1) begin
                 x_w[i] = x_r[i+1];
             end
+            x_w[13] = x_in;
         end
         else if (start_r == 1'b1) begin //shift but not store x_in
             x_w[16] = x_r[1];
@@ -307,6 +310,23 @@ module register_file (
             delay_start_r <= delay_start_w;
     end
 
+    //Handle compute_delay_start_r to know when we start write the value back
+    always @(*) begin
+        if (start_r == 1'b1 && count_r == 4'd2) begin
+            compute_delay_start_w = start_r;
+        end
+        else begin
+            compute_delay_start_w = compute_delay_start_r;
+        end
+    end
+
+    always @(posedge clk_in or posedge rst_in) begin
+        if (rst_in == 1'b1)
+            compute_delay_start_r <= 1'b0;
+        else
+            compute_delay_start_r <= compute_delay_start_w;
+    end
+
     assign b_out     = b_r[1];                               //always output b_r[1] and shift from higher index
     assign x1_out    = (count_r < 4'd12) ? x_r[5] :
                        (count_r < 4'd15) ? x_r[6] : 32'd0;
@@ -337,6 +357,28 @@ module Computation_Unit (clk, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); // comput
     input signed  [31:0] x_0, x_1, x_2, x_3, x_4, x_5;
     output signed [31:0] x_new;
 
+    reg signed  [31:0] b_r;                    
+    reg signed  [31:0] x_0_r, x_1_r, x_2_r, x_3_r, x_4_r, x_5_r;
+    reg signed  [31:0] b_r_r;                    
+    reg signed  [31:0] x_0_r_r, x_1_r_r, x_2_r_r, x_3_r_r, x_4_r_r, x_5_r_r;
+
+    always @(posedge clk) begin
+        b_r <= b;
+        x_0_r <= x_0;
+        x_1_r <= x_1;
+        x_2_r <= x_2;
+        x_3_r <= x_3;
+        x_4_r <= x_4;
+        x_5_r <= x_5;
+        b_r_r <= b_r;
+        x_0_r_r <= x_0_r;
+        x_1_r_r <= x_1_r;
+        x_2_r_r <= x_2_r;
+        x_3_r_r <= x_3_r;
+        x_4_r_r <= x_4_r;
+        x_5_r_r <= x_5_r;
+    end
+
     //================= Parameter Declaration ======================
     wire signed   [32:0] x_0_1, x_2_3, x_4_5, x_plus_b;
     wire signed   [33:0] x_2_3_mul2;
@@ -346,10 +388,10 @@ module Computation_Unit (clk, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); // comput
     reg signed    [36:0] DFF;
 
     //===================== Combinational ==========================
-    assign x_0_1 = x_0 + x_1;
-    assign x_2_3 = x_2 + x_3;
-    assign x_4_5 = x_4 + x_5;
-    assign x_plus_b = x_4_5 + b;
+    assign x_0_1 = x_0_r_r + x_1_r_r;
+    assign x_2_3 = x_2_r_r + x_3_r_r;
+    assign x_4_5 = x_4_r_r + x_5_r_r;
+    assign x_plus_b = x_4_5 + b_r_r;
     assign x_0_1_mul4 = {x_0_1, 2'b0};
     assign x_0_1_mul8 = {x_0_1, 3'b0};
     assign x_0_1_mul13 = x_0_1 + x_0_1_mul4 + x_0_1_mul8;
