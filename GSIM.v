@@ -63,7 +63,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     //Handle run_count_r, initialize when in_en is high; otherwise, when cycle_count_r is 15, run_count_r + 1
     always @(*) begin
         if (in_en == 1'b1)
-            run_count_w = 6'd0;
+            run_count_w = 8'd0;
         else if (cycle_count_r == 4'd15)
             run_count_w = run_count_r + 1;
         else
