@@ -1,7 +1,7 @@
 # operating conditions and boundary conditions #
 current_design [get_designs GSIM]
 
-set cycle  10         ;#clock period defined by designer
+set cycle  7.5         ;#clock period defined by designer
 
 create_clock -period $cycle [get_ports  clk]
 set_dont_touch_network      [get_clocks clk]
