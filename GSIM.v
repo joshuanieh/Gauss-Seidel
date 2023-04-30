@@ -531,5 +531,5 @@ module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-1
     assign x_21to34 = x_21to26 + x_29to34;
 
     assign x_total = x_5to18 + x_21to34;
-    assign out = x_total[36:5];
+    assign out = x_total[36:5] + x_total[4];
 endmodule
