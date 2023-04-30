@@ -17,6 +17,7 @@ set_operating_conditions -min_library fast -min fast  -max_library slow -max slo
 set_wire_load_model -name tsmc13_wl10 -library slow                        
 
 set_max_fanout 20 [all_inputs]
+set_max_area 0
 
 compile
 write_sdf -version 2.1 GSIM_syn.sdf
