@@ -1,7 +1,7 @@
 # operating conditions and boundary conditions #
 current_design [get_designs GSIM]
 
-set cycle  7.5         ;#clock period defined by designer
+set cycle  4         ;#clock period defined by designer
 
 create_clock -period $cycle [get_ports  clk]
 set_dont_touch_network      [get_clocks clk]
@@ -19,7 +19,7 @@ set_wire_load_model -name tsmc13_wl10 -library slow
 set_max_fanout 20 [all_inputs]
 set_max_area 0
 
-compile
+compile_ultra
 write_sdf -version 2.1 GSIM_syn.sdf
 write -format verilog -hier -output GSIM_syn.v
 write -format ddc     -hier -output GSIM_syn.ddc  
