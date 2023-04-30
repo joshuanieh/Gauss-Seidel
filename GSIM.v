@@ -8,7 +8,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     input   [15:0]  b_in;
     output reg [31:0]  x_out;
 
-    parameter RUN = 100; //after this run number, the out_valid will be pulled up
+    parameter RUN = 69; //after this run number, the out_valid will be pulled up
 
     wire [32-1:0] x;
     wire [32-1:0] x1, x2, x3, x4, x5, x6;
@@ -41,7 +41,6 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
 
     Computation_Unit Computation_Unit (
         .clk(clk),
-        .reset(reset),
         .b({b, 16'd0}),
         .x_0(x1),
         .x_1(x2),
@@ -273,7 +272,9 @@ module register_file (
     end
 
     always @(posedge clk_in or posedge rst_in) begin
-        if (start_r == 1'b1 || en_in == 1'b1)
+        if (rst_in == 1'b1)
+            count_r <= 4'd0;
+        else if (start_r == 1'b1 || en_in == 1'b1)
             count_r <= count_w;
         else
             count_r <= 4'd0;
@@ -450,8 +451,8 @@ endmodule
 我自己測了幾個test pattern，答案是正確的(雖然不能百分百保證沒問題)，然後誤差也很小，看能不能達到rank A(不能就再改一下除法器)
  ================================*/
 
-module Computation_Unit (clk, reset, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); // compute the result in 2 cycles 
-    input                clk, reset;               // Compute : b + 13(x_0 + x_1) - 6(x_2 + x_3) + (x_4 + x_5)
+module Computation_Unit (clk, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); // compute the result in 2 cycles 
+    input                clk;               // Compute : b + 13(x_0 + x_1) - 6(x_2 + x_3) + (x_4 + x_5)
     input signed  [31:0] b;                    
     input signed  [31:0] x_0, x_1, x_2, x_3, x_4, x_5;
     output signed [31:0] x_new;
@@ -481,9 +482,8 @@ module Computation_Unit (clk, reset, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); //
     division_20 div0 (.in(DFF), .out(x_new));
 
     //======================= Sequential ===========================
-    always @(posedge clk or posedge reset) begin
-        if (reset) DFF <= 36'b0;
-        else DFF <= DFF_nxt;
+    always @(posedge clk) begin
+        DFF <= DFF_nxt;
     end
 
 endmodule
