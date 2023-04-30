@@ -192,7 +192,7 @@ module register_file (
             b_w[2] = b_r[9];
             b_w[3] = b_r[13];
             b_w[4] = b_r[2];
-            b_w[4] = b_r[6];
+            b_w[5] = b_r[6];
             b_w[6] = b_r[10];
             b_w[7] = b_r[14];
             b_w[8] = b_r[3];
