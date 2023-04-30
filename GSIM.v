@@ -8,7 +8,7 @@ module GSIM ( clk, reset, in_en, b_in, out_valid, x_out);
     input   [15:0]  b_in;
     output reg [31:0]  x_out;
 
-    parameter RUN = 100; //after this run number, the out_valid will be pulled up
+    parameter RUN = 69; //after this run number, the out_valid will be pulled up
 
     wire [32-1:0] x;
     wire [32-1:0] x1, x2, x3, x4, x5, x6;
@@ -345,82 +345,73 @@ module register_file (
 endmodule
 
 
-/* ======== 說明 ========
-以下的code是參考Exercise.pdf p.9 右下角的架構圖來完成的
-不過我把他切成2個stage的pipeline，前後2個stage的critical path都差不多是連續4個32bit加法所要的時間
-我自己測了幾個test pattern，答案是正確的(雖然不能百分百保證沒問題)，然後誤差也很小，看能不能達到rank A(不能就再改一下除法器)
- ================================*/
-
 module Computation_Unit (clk, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); // compute the result in 2 cycles 
     input                clk;               // Compute : b + 13(x_0 + x_1) - 6(x_2 + x_3) + (x_4 + x_5)
     input signed  [31:0] b;                    
     input signed  [31:0] x_0, x_1, x_2, x_3, x_4, x_5;
     output signed [31:0] x_new;
 
-    reg signed  [31:0] b_r;                    
-    reg signed  [31:0] x_0_r, x_1_r, x_2_r, x_3_r, x_4_r, x_5_r;
-    reg signed  [31:0] b_r_r;                    
-    reg signed  [31:0] x_0_r_r, x_1_r_r, x_2_r_r, x_3_r_r, x_4_r_r, x_5_r_r;
-
-    always @(posedge clk) begin
-        b_r <= b;
-        x_0_r <= x_0;
-        x_1_r <= x_1;
-        x_2_r <= x_2;
-        x_3_r <= x_3;
-        x_4_r <= x_4;
-        x_5_r <= x_5;
-        b_r_r <= b_r;
-        x_0_r_r <= x_0_r;
-        x_1_r_r <= x_1_r;
-        x_2_r_r <= x_2_r;
-        x_3_r_r <= x_3_r;
-        x_4_r_r <= x_4_r;
-        x_5_r_r <= x_5_r;
-    end
 
     //================= Parameter Declaration ======================
-    wire signed   [32:0] x_0_1, x_2_3, x_4_5, x_plus_b;
+    wire signed   [32:0] x_0_1_w, x_2_3, x_4_5, x_plus_b_w;
     wire signed   [33:0] x_2_3_mul2;
-    wire signed   [34:0] x_0_1_mul4, x_2_3_mul4, x_2_3_mul6;
-    wire signed   [35:0] x_0_1_mul8, x_0_1_mul13, x_sub_6;
+    wire signed   [34:0] x_0_1_mul4, x_2_3_mul4, x_2_3_mul6_w;
+    wire signed   [35:0] x_0_1_mul8, x_0_1_mul12_w, x_0_1_mul13, x_sub_6;
     wire signed   [36:0] DFF_nxt;
+
+    reg signed    [32:0] x_0_1_r, x_plus_b_r;
+    reg signed    [34:0] x_2_3_mul6_r;
+    reg signed    [35:0] x_0_1_mul12_r;
     reg signed    [36:0] DFF;
 
     //===================== Combinational ==========================
-    assign x_0_1 = x_0_r_r + x_1_r_r;
-    assign x_2_3 = x_2_r_r + x_3_r_r;
-    assign x_4_5 = x_4_r_r + x_5_r_r;
-    assign x_plus_b = x_4_5 + b_r_r;
-    assign x_0_1_mul4 = {x_0_1, 2'b0};
-    assign x_0_1_mul8 = {x_0_1, 3'b0};
-    assign x_0_1_mul13 = x_0_1 + x_0_1_mul4 + x_0_1_mul8;
+    // stage 1 (roughly the time for 2 add operation) 
+    assign x_0_1_w = x_0 + x_1;
+    assign x_2_3   = x_2 + x_3;
+    assign x_4_5   = x_4 + x_5;
+
+    assign x_plus_b_w = x_4_5 + b;
+
+    assign x_0_1_mul4 = {x_0_1_w, 2'b0};
+    assign x_0_1_mul8 = {x_0_1_w, 3'b0};
+    assign x_0_1_mul12_w = x_0_1_mul4 + x_0_1_mul8;
+
     assign x_2_3_mul2 = {x_2_3, 1'b0};
     assign x_2_3_mul4 = {x_2_3, 2'b0};
-    assign x_2_3_mul6 = x_2_3_mul2 + x_2_3_mul4;
-    assign x_sub_6 = x_plus_b - x_2_3_mul6;
-    assign DFF_nxt = x_0_1_mul13 + x_sub_6;
+    assign x_2_3_mul6_w = x_2_3_mul2 + x_2_3_mul4;
 
-    division_20 div0 (.in(DFF), .out(x_new));
+    // stage 2 (roughly the time for 2 add operation)
+    assign x_sub_6     = x_plus_b_r    - x_2_3_mul6_r;
+    assign x_0_1_mul13 = x_0_1_mul12_r + x_0_1_r;
+    assign DFF_nxt     = x_0_1_mul13   + x_sub_6;
+
+    division_20 div0 (.clk(clk), .in(DFF), .out(x_new));
 
     //======================= Sequential ===========================
     always @(posedge clk) begin
-        DFF <= DFF_nxt;
+        x_0_1_r       <= x_0_1_w;
+        x_plus_b_r    <= x_plus_b_w;
+        x_2_3_mul6_r  <= x_2_3_mul6_w;
+        x_0_1_mul12_r <= x_0_1_mul12_w;        
+        DFF           <= DFF_nxt;
     end
 
 endmodule
 
-module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-13 + 2^-14 + 2^-17 + 2^-18 
-    input  signed [36:0] in;   //            + 2^-21 + 2^-22 + 2^-25 + 2^-26 + 2^-29 + 2^-30 + 2^-33 + 2^-34)
+module division_20 (clk, in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-13 + 2^-14 + 2^-17 + 2^-18 
+    input clk;                      //            + 2^-21 + 2^-22 + 2^-25 + 2^-26 + 2^-29 + 2^-30 + 2^-33 + 2^-34)
+    input  signed [36:0] in;   
     output signed [31:0] out;
 
     wire signed [36:0] x_5, x_6, x_9, x_10, x_13, x_14, x_17, x_18, x_21, x_22, x_25, x_26, x_29, x_30, x_33, x_34;
     wire signed [36:0] x_5_6, x_9_10, x_13_14, x_17_18, x_21_22, x_25_26, x_29_30, x_33_34;
-    wire signed [36:0] x_5to10, x_13to18, x_21to26, x_29to34, x_5to18, x_21to34, x_total;
+    wire signed [36:0] x_5to10_w, x_13to18_w, x_21to26_w, x_29to34_w, x_5to18, x_21to34, x_total;
+    reg  signed [36:0] x_5to10_r, x_13to18_r, x_21to26_r, x_29to34_r;
 
-    assign x_5 = in;
-    assign x_6 = in >>> 1;
-    assign x_9 = in >>> 4;
+    //===================== Combinational ==========================
+    assign x_5  = in;
+    assign x_6  = in >>> 1;
+    assign x_9  = in >>> 4;
     assign x_10 = in >>> 5;
     assign x_13 = in >>> 8;
     assign x_14 = in >>> 9;
@@ -435,8 +426,8 @@ module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-1
     assign x_33 = in >>> 28;
     assign x_34 = in >>> 29;
 
-    assign x_5_6 = x_5 + x_6;
-    assign x_9_10 = x_9 + x_10;
+    assign x_5_6   = x_5  + x_6;
+    assign x_9_10  = x_9  + x_10;
     assign x_13_14 = x_13 + x_14;
     assign x_17_18 = x_17 + x_18;
     assign x_21_22 = x_21 + x_22;
@@ -444,14 +435,23 @@ module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-1
     assign x_29_30 = x_29 + x_30;
     assign x_33_34 = x_33 + x_34;
 
-    assign x_5to10 = x_5_6 + x_9_10;
-    assign x_13to18 = x_13_14 + x_17_18;
-    assign x_21to26 = x_21_22 + x_25_26;
-    assign x_29to34 = x_29_30 + x_33_34;
+    assign x_5to10_w  = x_5_6   + x_9_10;
+    assign x_13to18_w = x_13_14 + x_17_18;
+    assign x_21to26_w = x_21_22 + x_25_26;
+    assign x_29to34_w = x_29_30 + x_33_34;
 
-    assign x_5to18 = x_5to10 + x_13to18;
-    assign x_21to34 = x_21to26 + x_29to34;
+    assign x_5to18  = x_5to10_r  + x_13to18_r;
+    assign x_21to34 = x_21to26_r + x_29to34_r;
 
     assign x_total = x_5to18 + x_21to34;
     assign out = x_total[36:5] + x_total[4];
+
+    //======================= Sequential ===========================
+    always @(posedge clk) begin
+        x_5to10_r  <= x_5to10_w;
+        x_13to18_r <= x_13to18_w;
+        x_21to26_r <= x_21to26_w;
+        x_29to34_r <= x_29to34_w;
+    end
+
 endmodule
