@@ -488,12 +488,13 @@ module Computation_Unit (clk, reset, b, x_0, x_1, x_2, x_3, x_4, x_5, x_new); //
 
 endmodule
 
-module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-13 + 2^-14 
-    input  signed [36:0] in;          //            + 2^-17 + 2^-18 + 2^-21 + 2^-22 + 2^-25 + 2^-26 + 2^-29 + 2^-30)
+module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-13 + 2^-14 + 2^-17 + 2^-18 
+    input  signed [36:0] in;   //            + 2^-21 + 2^-22 + 2^-25 + 2^-26 + 2^-29 + 2^-30 + 2^-33 + 2^-34)
     output signed [31:0] out;
 
-    wire signed [36:0] x_5, x_6, x_9, x_10, x_13, x_14, x_17, x_18, x_21, x_22, x_25, x_26, x_29, x_30;
-    wire signed [36:0] x_5_6, x_9_10, x_13_14, x_17_18, x_21_22, x_25_26, x_29_30, x_5to10, x_13to18, x_21to26, x_5to18, x_21to30;
+    wire signed [36:0] x_5, x_6, x_9, x_10, x_13, x_14, x_17, x_18, x_21, x_22, x_25, x_26, x_29, x_30, x_33, x_34;
+    wire signed [36:0] x_5_6, x_9_10, x_13_14, x_17_18, x_21_22, x_25_26, x_29_30, x_33_34;
+    wire signed [36:0] x_5to10, x_13to18, x_21to26, x_29to34, x_5to18, x_21to34, x_total;
 
     assign x_5 = in;
     assign x_6 = in >>> 1;
@@ -509,6 +510,8 @@ module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-1
     assign x_26 = in >>> 21;
     assign x_29 = in >>> 24;
     assign x_30 = in >>> 25;
+    assign x_33 = in >>> 28;
+    assign x_34 = in >>> 29;
 
     assign x_5_6 = x_5 + x_6;
     assign x_9_10 = x_9 + x_10;
@@ -517,13 +520,16 @@ module division_20 (in, out);  // multiply by (2^-5 + 2^-6 + 2^-9 + 2^-10 + 2^-1
     assign x_21_22 = x_21 + x_22;
     assign x_25_26 = x_25 + x_26;
     assign x_29_30 = x_29 + x_30;
+    assign x_33_34 = x_33 + x_34;
 
     assign x_5to10 = x_5_6 + x_9_10;
     assign x_13to18 = x_13_14 + x_17_18;
     assign x_21to26 = x_21_22 + x_25_26;
+    assign x_29to34 = x_29_30 + x_33_34;
 
     assign x_5to18 = x_5to10 + x_13to18;
-    assign x_21to30 = x_21to26 + x_29_30;
+    assign x_21to34 = x_21to26 + x_29to34;
 
-    assign out = x_5to18[36:5] + x_21to30[36:5];
+    assign x_total = x_5to18 + x_21to34;
+    assign out = x_total[36:5];
 endmodule
